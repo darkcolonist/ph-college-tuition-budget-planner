@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 type Bindings = {
   GEMINI_API_KEY: string
-  ALLOWED_ORIGIN?: string
+  ALLOWED_ORIGINS?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -16,8 +16,12 @@ const MAX_COMPARISONS_PER_HOUR = 3
 const WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
 app.use('*', async (c, next) => {
+  const allowedOrigins = c.env.ALLOWED_ORIGINS 
+    ? c.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+    : '*'
+
   const corsMiddleware = cors({
-    origin: c.env.ALLOWED_ORIGIN || '*',
+    origin: allowedOrigins,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'x-visitor-ip'],
     exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],

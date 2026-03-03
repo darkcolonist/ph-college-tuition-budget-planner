@@ -8,6 +8,11 @@ compatibility_date = "2024-03-02"
 # [ai]
 # binding = "AI"
 
+[vars]
+# ALLOWED_ORIGINS: Comma-separated list of origins that can access this worker
+# This is a public variable and can be configured in the Cloudflare Dashboard
+ALLOWED_ORIGINS = "*"
+
 [observability]
 enabled = true
 head_sampling_rate = 1

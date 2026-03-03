@@ -4,11 +4,22 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 type Bindings = {
   GEMINI_API_KEY: string
+  ALLOWED_ORIGIN?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.use('*', cors())
+app.use('*', async (c, next) => {
+  const corsMiddleware = cors({
+    origin: c.env.ALLOWED_ORIGIN || '*',
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+    maxAge: 600,
+    credentials: true,
+  })
+  return corsMiddleware(c, next)
+})
 
 /**
  * Normalization logic (System instruction):

@@ -22,6 +22,8 @@ The project is split into:
 
 The worker handles the AI logic and university data comparison.
 
+### Option A: Local Deployment (Manual)
+
 1.  **Login to Wrangler**:
     ```bash
     cd worker
@@ -39,6 +41,20 @@ The worker handles the AI logic and university data comparison.
     npx wrangler secret put GEMINI_API_KEY
     ```
     *Paste your API key when prompted.*
+
+### Option B: Git-Based Deployment (Recommended)
+
+1.  **Get a Cloudflare API Token**:
+    - Go to [Cloudflare Dashboard > My Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens).
+    - Create a token using the "Edit Cloudflare Workers" template.
+2.  **Add GitHub Secret**:
+    - In your GitHub repository, go to **Settings > Secrets and variables > Actions**.
+    - Add a new repository secret named `CLOUDFLARE_API_TOKEN` with your token.
+3.  **Automatic Deployment**:
+    - The project includes a GitHub Action ([`.github/workflows/deploy-worker.yml`](../.github/workflows/deploy-worker.yml)) that automatically deploys the worker whenever you push changes to the `main` branch under the `worker/` directory.
+
+> [!NOTE]
+> You still need to manually set the `GEMINI_API_KEY` secret once using `npx wrangler secret put GEMINI_API_KEY` or through the Cloudflare Dashboard for the worker.
 
 ---
 
@@ -84,16 +100,19 @@ Update the frontend to point to your live worker instead of `localhost`.
 
 ## 🔒 Step 4: Final Security Check (CORS)
 
-Ensure your `worker/src/index.ts` allows requests from your Pages domain.
+The worker is configured to pull the allowed origin from the `ALLOWED_ORIGIN` environment variable. If not set, it defaults to `*` (anywhere).
 
-```typescript
-import { cors } from 'hono/cors'
+1.  **Set the Allowed Origin (Optional but Recommended)**:
+    ```bash
+    npx wrangler secret put ALLOWED_ORIGIN
+    ```
+    *Paste your frontend URL (e.g., `https://edubank-ph.pages.dev`).*
 
-app.use('/api/*', cors({
-  origin: ['https://edubank-ph.pages.dev'], // or your custom domain
-  allowMethods: ['POST', 'GET', 'OPTIONS'],
-}))
-```
+2.  **Verify Configuration**:
+    Your `worker/src/index.ts` automatically handles this logic:
+    ```typescript
+    origin: c.env.ALLOWED_ORIGIN || '*'
+    ```
 
 ---
 

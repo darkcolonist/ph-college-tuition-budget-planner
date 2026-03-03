@@ -1,0 +1,83 @@
+{
+  "data": {
+    "normalizedCourseName": "Bachelor of Science in Computer Science",
+    "universities": [
+      {
+        "name": "University of the Philippines Diliman",
+        "abbreviation": "UP",
+        "year1": {
+          "tuitionFee": 0,
+          "miscFees": 2500,
+          "total": 2500,
+          "isTrimestral": false,
+          "notes": "Tuition covered by RA 10931 (Free Tuition Law)."
+        },
+        "projection": [
+          { "year": 2, "estimatedTotal": 2650 },
+          { "year": 3, "estimatedTotal": 2809 },
+          { "year": 4, "estimatedTotal": 2977.54 }
+        ]
+      },
+      {
+        "name": "Ateneo de Manila University",
+        "abbreviation": "ADMU",
+        "year1": {
+          "tuitionFee": 95000,
+          "miscFees": 15000,
+          "total": 110000,
+          "isTrimestral": false,
+          "notes": "Estimated semestral cost for SY 2024-2025."
+        },
+        "projection": [
+          { "year": 2, "estimatedTotal": 116600 },
+          { "year": 3, "estimatedTotal": 123596 },
+          { "year": 4, "estimatedTotal": 131011.76 }
+        ]
+      },
+      {
+        "name": "De La Salle University",
+        "abbreviation": "DLSU",
+        "year1": {
+          "tuitionFee": 85000,
+          "miscFees": 12000,
+          "total": 145500,
+          "isTrimestral": true,
+          "notes": "Cost normalized from trimestral to semestral view (Total / 2 * 3)."
+        },
+        "projection": [
+          { "year": 2, "estimatedTotal": 154230 },
+          { "year": 3, "estimatedTotal": 163483.8 },
+          { "year": 4, "estimatedTotal": 173292.83 }
+        ]
+      },
+      {
+        "name": "University of Santo Tomas",
+        "abbreviation": "UST",
+        "year1": {
+          "tuitionFee": 65000,
+          "miscFees": 10000,
+          "total": 75000,
+          "isTrimestral": false,
+          "notes": "Estimate based on typical UST semestral fees."
+        },
+        "projection": [
+          { "year": 2, "estimatedTotal": 79500 },
+          { "year": 3, "estimatedTotal": 84270 },
+          { "year": 4, "estimatedTotal": 89326.2 }
+        ]
+      }
+    ],
+    "groundingSources": "Comparison based on general fee trends for SY 2024-2025. This is mock data for testing purposes.",
+    "meta": {
+      "calculationBasis": "Semestral (PHP)",
+      "inflationRate": "6%"
+    }
+  },
+  "metadata": {
+    "promptTokenCount": 0,
+    "candidatesTokenCount": 0,
+    "totalTokenCount": 0,
+    "estimatedCostPhp": 0
+  },
+  "attributions": "<p><strong>Source:</strong> EduBank PH Mock Dataset 2024</p>"
+}

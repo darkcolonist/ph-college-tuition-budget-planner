@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Search from './components/Search';
 import Matrix from './components/Matrix';
 import DevInspector from './components/DevInspector';
+import mockData from './mock.json';
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -14,9 +15,42 @@ function App() {
 
   const API_BASE = import.meta.env.MODE === 'development' ? 'http://localhost:8787' : '';
 
+  const handleSearchMock = (courseName) => {
+    console.log("%c LLM Offline / Frontend Mock Active ", "background: #f59e0b; color: #000; font-weight: bold;");
+    
+    // Simulate slight delay for "realism"
+    setTimeout(() => {
+      const dynamicMockData = {
+        ...mockData,
+        data: {
+          ...mockData.data,
+          normalizedCourseName: courseName ? `Bachelor of Science in ${courseName}` : mockData.data.normalizedCourseName
+        },
+        isMock: true
+      };
+
+      setData(dynamicMockData.data);
+      setMetadata({
+        ...dynamicMockData.metadata,
+        isMock: true
+      });
+      setAttributions(dynamicMockData.attributions);
+      setLoading(false);
+    }, 800);
+  };
+
   const handleSearch = async (courseName) => {
     setLoading(true);
     setError(null);
+
+    // Use environment variable VITE_USE_LOCAL_MOCK, defaults to true if not strictly set to 'false'
+    const USE_LOCAL_MOCK = import.meta.env.VITE_USE_LOCAL_MOCK !== 'false'; 
+
+    if (USE_LOCAL_MOCK) {
+      handleSearchMock(courseName);
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/compare`, {
         method: 'POST',

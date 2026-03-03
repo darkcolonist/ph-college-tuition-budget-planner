@@ -4,7 +4,7 @@ import { Terminal, ShieldCheck, CreditCard, Activity } from 'lucide-react';
 const DevInspector = ({ metadata }) => {
   if (!metadata) return null;
 
-  const { promptTokenCount, candidatesTokenCount, totalTokenCount, estimatedCostPhp } = metadata;
+  const { promptTokenCount, candidatesTokenCount, totalTokenCount, estimatedCostPhp, isMock } = metadata;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 glass rounded-2xl border-cyan-500/30 overflow-hidden shadow-2xl transition-all duration-300 hover:shadow-cyan-500/10 group">
@@ -13,8 +13,10 @@ const DevInspector = ({ metadata }) => {
         <Terminal className="w-3.5 h-3.5 text-cyan-400" />
         <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Dev Inspector</span>
         <div className="ml-auto flex items-center gap-1.5">
-           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-           <span className="text-[9px] text-green-500 font-bold uppercase">Online</span>
+           <div className={`w-1.5 h-1.5 rounded-full ${isMock ? 'bg-amber-500 animate-pulse' : 'bg-green-500 animate-pulse'}`} />
+           <span className={`text-[9px] font-bold uppercase ${isMock ? 'text-amber-500' : 'text-green-500'}`}>
+             {isMock ? 'LLM Offline (Mock)' : 'LLM Online'}
+           </span>
         </div>
       </div>
       
@@ -56,7 +58,7 @@ const DevInspector = ({ metadata }) => {
       {/* Footer Info */}
       <div className="px-4 py-2 bg-slate-900/80 border-t border-white/5 flex items-center gap-2">
           <span className="text-[9px] text-slate-500 font-medium italic">
-            v1.5 Flash Grounding Enabled
+            {isMock ? 'Local JSON Mock Dataset Active' : 'v1.5 Flash Grounding Enabled'}
           </span>
       </div>
     </div>

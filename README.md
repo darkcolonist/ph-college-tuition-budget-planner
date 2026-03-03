@@ -15,18 +15,33 @@ A professional fintech-inspired budget planner for comparing the "Big 4" univers
 - **Forecasting**: Estimates Year 2-4 costs with a 6% annual inflation forecast.
 - **Dev Inspector**: Real-time monitoring of token usage and PHP cost.
 
-## Setup Instructions
+### Quick Start (Both)
+To start both the backend and frontend simultaneously:
+```bash
+npm install
+npm run dev
+```
 
 ### 1. Backend (Worker)
 ```bash
 cd worker
 npm install
 ```
-Set your `GEMINI_API_KEY` in Cloudflare Secrets:
+
+**Local Secrets Setup:**
+1. Copy the example vars file:
+   ```bash
+   cp .dev.vars.example .dev.vars
+   ```
+2. Open `.dev.vars` and add your `GEMINI_API_KEY`.
+
+**Production Secrets (Cloudflare):**
+Set your `GEMINI_API_KEY` in Cloudflare:
 ```bash
 npx wrangler secret put GEMINI_API_KEY
 ```
-Run locally:
+
+**Run locally:**
 ```bash
 npm run dev
 ```

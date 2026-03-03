@@ -1,0 +1,12 @@
+{
+  "name": "edubank-ph-root",
+  "private": true,
+  "scripts": {
+    "dev:worker": "npm run dev --prefix worker",
+    "dev:client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run dev:worker\" \"npm run dev:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

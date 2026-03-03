@@ -1,31 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search as SearchIcon, Loader2, X } from 'lucide-react';
+import COURSES from '../courses.json';
 
 const Search = ({ onSearch, isLoading }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef(null);
-  const API_BASE = import.meta.env.MODE === 'development' ? 'http://localhost:8787' : '';
 
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (query.length < 3) {
-        setSuggestions([]);
-        return;
-      }
-      try {
-        const res = await fetch(`${API_BASE}/api/suggestions?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        setSuggestions(data);
-        setShowSuggestions(true);
-      } catch (err) {
-        console.error('Suggestions error:', err);
-      }
-    };
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
 
-    const timer = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(timer);
+    // Client-side filtering
+    const filtered = COURSES.filter(course => 
+      course.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 6);
+
+    setSuggestions(filtered);
+    setShowSuggestions(filtered.length > 0);
   }, [query]);
 
   // Handle click outside

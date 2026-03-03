@@ -9,11 +9,17 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+// Simple in-memory rate limiter (resets on Worker restart)
+// In production, using Cloudflare KV or D1 is more reliable.
+const RATE_LIMITS = new Map<string, { count: number, timestamp: number }>()
+const MAX_COMPARISONS_PER_HOUR = 3
+const WINDOW_MS = 60 * 60 * 1000 // 1 hour
+
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
     origin: c.env.ALLOWED_ORIGIN || '*',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'x-visitor-ip'],
     exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
     maxAge: 600,
     credentials: true,
@@ -73,6 +79,27 @@ RESPONSE FORMAT (STRICT JSON):
 app.post('/api/compare', async (c) => {
   const { courseName } = await c.req.json()
   const apiKey = c.env.GEMINI_API_KEY
+  
+  // Rate Limiting Logic
+  const ip = c.req.header('cf-connecting-ip') || 'anon'
+  const now = Date.now()
+  const record = RATE_LIMITS.get(ip)
+
+  if (record) {
+    if (now - record.timestamp < WINDOW_MS) {
+      if (record.count >= MAX_COMPARISONS_PER_HOUR) {
+        return c.json({ 
+          error: 'Rate limit exceeded. Please try again after an hour to save on API usage.',
+          isLimit: true 
+        }, 429)
+      }
+      record.count++
+    } else {
+      RATE_LIMITS.set(ip, { count: 1, timestamp: now })
+    }
+  } else {
+    RATE_LIMITS.set(ip, { count: 1, timestamp: now })
+  }
 
   if (!apiKey) {
     return c.json({ error: 'API key is missing' }, 500)
@@ -80,9 +107,8 @@ app.post('/api/compare', async (c) => {
 
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    // @ts-ignore - Tools might not be in the typings yet depending on version, but supported in runtime
-    tools: [{ googleSearch: {} }]
+    model: "gemini-2.0-flash",
+    tools: [{ googleSearch: {} } as any]
   })
 
   const prompt = SYSTEM_INSTRUCTION.replace('{courseName}', courseName)
@@ -92,11 +118,9 @@ app.post('/api/compare', async (c) => {
     const response = await result.response
     const text = response.text()
     
-    // Extract JSON if it's wrapped in markdown
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text)
 
-    // Token usage metadata
     const metadata = {
       promptTokenCount: response.usageMetadata?.promptTokenCount || 0,
       candidatesTokenCount: response.usageMetadata?.candidatesTokenCount || 0,
@@ -104,7 +128,6 @@ app.post('/api/compare', async (c) => {
       estimatedCostPhp: ((response.usageMetadata?.totalTokenCount || 0) / 1000) * 0.0044
     }
 
-    // Grounding attributions
     const groundingMetadata = response.candidates?.[0]?.groundingMetadata
     const searchEntryPoint = groundingMetadata?.searchEntryPoint as any
     const attributions = searchEntryPoint?.htmlContent || ''
@@ -115,28 +138,10 @@ app.post('/api/compare', async (c) => {
       attributions
     })
   } catch (err: any) {
+    console.error('Gemini Error:', err)
     return c.json({ error: err.message }, 500)
   }
 })
 
-app.get('/api/suggestions', async (c) => {
-  const query = c.req.query('q')
-  const apiKey = c.env.GEMINI_API_KEY
-  if (!query || !apiKey) return c.json([])
-
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
-
-  try {
-    const prompt = `Provide 5 popular Philippine university course name suggestions starting with or related to "${query}". Return ONLY a JSON array of strings.`
-    const result = await model.generateContent(prompt)
-    const text = await result.response.text()
-    const jsonMatch = text.match(/\[.*\]/s)
-    const suggestions = jsonMatch ? JSON.parse(jsonMatch[0]) : []
-    return c.json(suggestions)
-  } catch {
-    return c.json([])
-  }
-})
-
 export default app
+

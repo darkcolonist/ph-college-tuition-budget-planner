@@ -186,7 +186,7 @@ function App() {
         </div>
       </footer>
 
-      <DevInspector metadata={metadata} />
+      {import.meta.env.DEV && <DevInspector metadata={metadata} />}
     </div>
   );
 }

@@ -16,12 +16,16 @@ const MAX_COMPARISONS_PER_HOUR = 3
 const WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
 app.use('*', async (c, next) => {
-  const allowedOrigins = c.env.ALLOWED_ORIGINS 
-    ? c.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
-    : '*'
-
+  const originHeader = c.env.ALLOWED_ORIGINS || '*'
+  
   const corsMiddleware = cors({
-    origin: allowedOrigins,
+    origin: (origin) => {
+      const allowed = originHeader.split(',').map(s => s.trim())
+      if (allowed.includes('*') || allowed.includes(origin)) {
+        return origin
+      }
+      return null
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'x-visitor-ip'],
     exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
@@ -38,45 +42,32 @@ app.use('*', async (c, next) => {
  * - Inflation: 6% compounding.
  */
 const SYSTEM_INSTRUCTION = `
-You are an expert in Philippine Higher Education costs for the Academic Year 2024-2025.
-Your task is to provide a detailed cost breakdown for the "Big 4" universities: UP Diliman, Ateneo (ADMU), DLSU, and UST.
-
+You are a Philippine Education Cost API. Return ONLY raw JSON. No markdown blocks, no intro, no outro.
 COURSE: {courseName}
 
-INPUT GUIDELINES:
+STRICT CONSTRAINTS:
 1. Normalize course names (e.g., "BS CS" -> "Bachelor of Science in Computer Science").
-2. Search specifically for 2024-2025 tuition and miscellaneous fees.
-3. ACCOUNT FOR FREE TUITION: For UP Diliman, set tuitionFee to 0 (assume covered by RA 10931), but fetch miscellaneous fees.
-4. NORMALIZE DLSU: DLSU is trimestral. Provide separate 'originalFees' (per term) and 'normalizedFees' (calculated as (Term_Cost * 3) / 2 to show a semestral view for direct comparison).
-5. INFLATION: Apply a 6% annual inflation forecast for years 2-4 based on Year 1 total cost.
+2. For UP Diliman: tuitionFee = 0.
+3. For DLSU: Normalize (Term_Cost * 3) / 2 for semestral view.
+4. Inflation: 6% compounding for years 2-4.
+5. NO NOTES, NO EXPLANATIONS, NO GROUNDING SOURCE LINKS IN JSON.
 
-RESPONSE FORMAT (STRICT JSON):
+JSON STRUCTURE:
 {
   "normalizedCourseName": "string",
   "universities": [
     {
-      "name": "University of the Philippines Diliman",
-      "abbreviation": "UP",
-      "year1": {
-        "tuitionFee": number,
-        "miscFees": number,
-        "total": number,
-        "isTrimestral": false,
-        "notes": "string"
-      },
+      "name": "string",
+      "abbreviation": "UP|ADMU|DLSU|UST",
+      "year1": { "tuitionFee": number, "miscFees": number, "total": number },
       "projection": [
         { "year": 2, "estimatedTotal": number },
         { "year": 3, "estimatedTotal": number },
         { "year": 4, "estimatedTotal": number }
       ]
-    },
-    ... similar for ADMU, DLSU, UST
+    }
   ],
-  "groundingSources": "string summary of links",
-  "meta": {
-    "calculationBasis": "Semestral (PHP)",
-    "inflationRate": "6%"
-  }
+  "meta": { "calculationBasis": "Semestral (PHP)", "inflationRate": "6%" }
 }
 `
 
@@ -112,7 +103,10 @@ app.post('/api/compare', async (c) => {
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash-lite",
-    tools: [{ googleSearch: {} } as any]
+    tools: [{ googleSearch: {} as any}],
+    generationConfig: {
+      maxOutputTokens: 2048,
+    }
   })
 
   const prompt = SYSTEM_INSTRUCTION.replace('{courseName}', courseName)
@@ -122,8 +116,20 @@ app.post('/api/compare', async (c) => {
     const response = await result.response
     const text = response.text()
     
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    const data = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(text)
+    console.log('--- RAW GEMINI RESPONSE ---')
+    console.log(text)
+    console.log('---------------------------')
+
+    let data;
+    try {
+      // Clean markdown block markers if present
+      const cleanText = text.replace(/```json|```/g, '').trim()
+      const jsonMatch = cleanText.match(/\{[\s\S]*\}/)
+      data = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(cleanText)
+    } catch (parseErr) {
+      console.error('Final Parse Failed:', parseErr)
+      return c.json({ error: 'Failed to parse AI response', raw: text }, 500)
+    }
 
     const metadata = {
       promptTokenCount: response.usageMetadata?.promptTokenCount || 0,

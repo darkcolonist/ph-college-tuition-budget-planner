@@ -81,17 +81,19 @@ function App() {
       {/* Nav */}
       <nav className="sticky top-0 z-50 glass border-slate-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center p-2.5 shadow-lg shadow-cyan-500/10">
-            <Sparkles className="w-full h-full text-white" />
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 flex items-center justify-center p-1.5 shadow-lg shadow-cyan-500/5 border border-white/10 overflow-hidden">
+            <img src="/logo.png" alt="EduBank PH Logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-xl font-black bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent uppercase tracking-tight">
             EduBank <span className="text-cyan-400">PH</span>
           </span>
         </div>
+        {/* Commented out for now
         <div className="hidden md:flex items-center gap-6">
           <a href="#" className="text-xs font-bold text-slate-400 hover:text-slate-100 uppercase tracking-widest transition-colors">University Directory</a>
           <a href="#" className="text-xs font-bold text-slate-400 hover:text-slate-100 uppercase tracking-widest transition-colors">Financial Guide</a>
         </div>
+        */}
       </nav>
 
       <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full relative z-10 space-y-20">
@@ -179,7 +181,7 @@ function App() {
              <span className="text-lg font-black uppercase tracking-tight">EduBank PH</span>
           </div>
           <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
-            © 2026 EduBank PH. Built for Financial Transparency.
+            © {new Date().getFullYear()} EduBank PH. Built for Financial Transparency.
           </p>
         </div>
       </footer>
